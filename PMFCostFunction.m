@@ -1,4 +1,4 @@
-function [cost U_new V_new] = PMFCostFunction(R, I, U, V, lambda_u, lambda_v)
+function [cost, U_new, V_new] = PMFCostFunction(R, I, U, V, lambda_u, lambda_v)
 
 K = size(U, 1);
 

@@ -1,5 +1,7 @@
 clc; clear;
 data_path = '../data/u.data';
+train_percent = 0.8;    % set 0.2 for sparse data
+repeat = 5;
 
 %% Read data
 fprintf('Reading data...\n');
@@ -8,55 +10,63 @@ I = R > 0;
 rate_num = sum(sum(I));
 
 %% Choosing lambda
-%select 80 percent
-num_80 = floor(0.8 * rate_num);
+num_train = floor(train_percent * rate_num);
 randperm_100 = randperm(rate_num);
-sample_80_list = randperm_100(1, 1:num_80);
-I_80 = sampleData(data_path, 943, 1682, sample_80_list);
-I_20 = I - I_80;
+sample_train_list = randperm_100(1, 1:num_train);
+I_train = sampleData(data_path, 943, 1682, sample_train_list);
+I_val = I - I_train;
 
-fprintf('Choosing regularization hyperparameters...\n');
+fprintf('\nChoosing regularization hyperparameters...\n');
 lambda_u_set = [0.1, 1, 10, 100];
 lambda_v_set = [0.1, 1, 10, 100];
-repeat = 1;
-cost = zeros(4, 4, repeat);
+cost_lambda_train = zeros(4, 4, repeat);
+cost_lambda_val = zeros(4, 4, repeat);
 for t = 1 : repeat
     fprintf('Cross validation turn %d\n', t);
-    num_64 = floor(0.64 * rate_num);
-    randperm_80 = randperm(num_80);
-    randperm_top_64 = randperm_80(1, 1:num_64);
-    sample_64_list = sample_80_list(randperm_top_64);
-    I_train_64 = sampleData(data_path, 943, 1682, sample_64_list);
-    I_val_16 = I_80 - I_train_64;
-    cost_mat = findLambda(R, I_train_64, I_val_16);
-    cost(:, :, t) = cost_mat;
+    num_80 = floor(0.8 * num_train);
+    randperm_train = randperm(num_train);
+    randperm_top_80 = randperm_train(1, 1:num_80);
+    sample_80_list = sample_train_list(randperm_top_80);
+    I_train_80 = sampleData(data_path, 943, 1682, sample_80_list);
+    I_val_20 = I_train - I_train_80;
+    [cost_train, cost_val] = findLambda(R, I_train_80, I_val_20);
+    cost_lambda_train(:, :, t) = cost_train;
+    cost_lambda_val(:, :, t) = cost_val;
 end
-sum_cost = sum(cost, 3);
-[r,c] = find(sum_cost == min(sum_cost(:)))
+sum_cost_lambda_train = sum(cost_lambda_train, 3);
+average_cost_lambda_train = sum_cost_lambda_train / repeat;
+sum_cost_lambda_val = sum(cost_lambda_val, 3);
+average_cost_lambda_val = sum_cost_lambda_val / repeat;
+[r,c] = find(average_cost_lambda_val == min(average_cost_lambda_val(:)));
 lambda_u = lambda_u_set(r);
 lambda_v = lambda_v_set(c);
 
 %% Choosing K
-fprintf('Choosing K hyperparameters...\n');
+fprintf('\nChoosing K hyperparameters...\n');
 K_set = [1 2 3 4 5];
-cost = zeros(repeat, 5) + 100;
+cost_K_train = zeros(repeat, 5);
+cost_K_val = zeros(repeat, 5);
 for t = 1 : repeat
     fprintf('Cross validation turn %d\n', t);
-    num_64 = floor(0.64 * rate_num);
-    randperm_80 = randperm(num_80);
-    randperm_top_64 = randperm_80(1, 1:num_64);
-    sample_64_list = sample_80_list(randperm_top_64);
-    I_train_64 = sampleData(data_path, 943, 1682, sample_64_list);
-    I_val_16 = I_80 - I_train_64;
-    cost_mat = findK(R, I_train_64, I_val_16, lambda_u, lambda_v);
-    cost(t, :) = cost_mat;
+    num_80 = floor(0.8 * num_train);
+    randperm_train = randperm(num_train);
+    randperm_top_80 = randperm_train(1, 1:num_80);
+    sample_80_list = sample_train_list(randperm_top_80);
+    I_train_80 = sampleData(data_path, 943, 1682, sample_80_list);
+    I_val_29 = I_train - I_train_80;
+    [cost_train, cost_val] = findK(R, I_train_80, I_val_20, lambda_u, lambda_v);
+    cost_K_train(t, :) = cost_train;
+    cost_K_val(t, :) = cost_val;
 end
-sum_cost = sum(cost, 1);
-[min_cost location] = min(sum_cost);
+sum_cost_K_train = sum(cost_K_train, 1);
+average_cost_K_train = sum_cost_K_train / repeat;
+sum_cost_K_val = sum(cost_K_val, 1);
+average_cost_K_val = sum_cost_K_val / repeat;
+[min_cost, location] = min(average_cost_K_val);
 K = K_set(location);
 
-%% Train use all data
-fprintf('Train using all data...\n');
+%% Train on total data
+fprintf('\nTrain using all data...\n');
 usr_num = size(R, 1);
 mv_num = size(R, 2);
 U = random('norm', 0, 3, K, usr_num);
@@ -66,7 +76,7 @@ cost = 10000;
 ite = 0;
 dcost = cost;
 while dcost > 0.001
-    [new_cost U_new V_new] = PMFCostFunction(R, I_80, U, V, lambda_u, lambda_v);
+    [new_cost, U_new, V_new] = PMFCostFunction(R, I_train, U, V, lambda_u, lambda_v);
     U = U_new;
     V = V_new;
     dcost = abs(cost - new_cost);
@@ -74,7 +84,7 @@ while dcost > 0.001
     fprintf('After %d iterations, cost becomes %f.\n', ite, cost);
     ite = ite + 1;
 end
-        
-val_cost = evalCost(R, I_20, U, V);   
+train_cost = cost;        
+val_cost = evalCost(R, I_val, U, V);   
 fprintf('[Validation] cost is %f.\n', val_cost);
 

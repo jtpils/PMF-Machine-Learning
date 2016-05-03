@@ -1,0 +1,3 @@
+1. PMF_experiment.m is the main file containing pipeline of this program. Just run it for checking.
+2. Create ./data directory where the source codes lies and put data file 'u.data' in it.
+3. Set percentage of training data in first few lines of PMF_experiment.m to determine how sparse the data is.

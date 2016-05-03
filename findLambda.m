@@ -1,4 +1,4 @@
-function ret_cost = findLambda(R, I_train, I_val)
+function [cost_train, cost_val] = findLambda(R, I_train, I_val)
 K = 2;
 lambda_u_set = [0.1, 1, 10, 100];
 lambda_v_set = [0.1, 1, 10, 100];
@@ -6,7 +6,8 @@ lambda_v_set = [0.1, 1, 10, 100];
 usr_num = size(R, 1);
 mv_num = size(R, 2);
 
-ret_cost = zeros(4, 4) + 100;
+cost_train = zeros(4, 4) + 100;
+cost_val = zeros(4, 4) + 100;
 
 for iu = 1:4
     for iv = 1:4
@@ -31,9 +32,10 @@ for iu = 1:4
             fprintf('After %d iterations, cost becomes %f.\n', ite, cost);
             ite = ite + 1;
         end
+        cost_train(iu, iv) = cost;
         
         val_cost = evalCost(R, I_val, U, V);   
-        ret_cost(iu, iv) = val_cost;
+        cost_val(iu, iv) = val_cost;
         fprintf('[Validation] lambda_u = %f, lambda_v = %f, cost is %f.\n', lambda_u, lambda_v, val_cost);
     end
 end

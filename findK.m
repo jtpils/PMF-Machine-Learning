@@ -1,10 +1,11 @@
-function ret_cost = findK(R, I_train, I_val, lambda_u, lambda_v)
+function [cost_train, cost_val] = findK(R, I_train, I_val, lambda_u, lambda_v)
 
 usr_num = size(R, 1);
 mv_num = size(R, 2);
 
 K_set = [1 2 3 4 5];
-val_cost = zeros(1, 5) + 100;
+cost_train = zeros(1, 5) + 100;
+cost_val = zeros(1, 5) + 100;
 
 for k = 1:5
     fprintf('[Train] K = %d...\n', k);
@@ -26,9 +27,10 @@ for k = 1:5
         fprintf('After %d iterations, cost becomes %f.\n', ite, cost);
         ite = ite + 1;
     end
+    cost_train(k) = cost;
         
     val_cost = evalCost(R, I_val, U, V);   
-    ret_cost(k) = val_cost;
+    cost_val(k) = val_cost;
     fprintf('[Validation] K = %d, cost is %f.\n', k, val_cost);
 end
 
