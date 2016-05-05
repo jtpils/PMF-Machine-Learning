@@ -1,13 +1,18 @@
-clc; clear;
+clc; clear; close all;
+start_all = tic;
 data_path = '../data/u.data';
-train_percent = 0.8;    % set 0.2 for sparse data
+train_percent = 0.2;    % set 0.2 for sparse data
 repeat = 5;
+
 
 %% Read data
 fprintf('Reading data...\n');
+start = tic;
 R = readData(data_path, 943, 1682);
 I = R > 0;
 rate_num = sum(sum(I));
+duration = toc(start);
+fprintf('Reading data finished, %.2f secs consumed.\n', duration);
 
 %% Choosing lambda
 num_train = floor(train_percent * rate_num);
@@ -17,6 +22,7 @@ I_train = sampleData(data_path, 943, 1682, sample_train_list);
 I_val = I - I_train;
 
 fprintf('\nChoosing regularization hyperparameters...\n');
+start = tic;
 lambda_u_set = [0.1, 1, 10, 100];
 lambda_v_set = [0.1, 1, 10, 100];
 cost_lambda_train = zeros(4, 4, repeat);
@@ -40,9 +46,12 @@ average_cost_lambda_val = sum_cost_lambda_val / repeat;
 [r,c] = find(average_cost_lambda_val == min(average_cost_lambda_val(:)));
 lambda_u = lambda_u_set(r);
 lambda_v = lambda_v_set(c);
+duration = toc(start);
+fprintf('Choosing regularization hyperparameters finished, %.2f secs consumed.\n', duration);
 
 %% Choosing K
-fprintf('\nChoosing K hyperparameters...\n');
+fprintf('\nChoosing number of factors...\n');
+start = tic;
 K_set = [1 2 3 4 5];
 cost_K_train = zeros(repeat, 5);
 cost_K_val = zeros(repeat, 5);
@@ -64,9 +73,12 @@ sum_cost_K_val = sum(cost_K_val, 1);
 average_cost_K_val = sum_cost_K_val / repeat;
 [min_cost, location] = min(average_cost_K_val);
 K = K_set(location);
+duration = toc(start);
+fprintf('Choosing number of factors finished, %.2f secs consumed.\n', duration);
 
 %% Train on total data
-fprintf('\nTrain using all data...\n');
+fprintf('\nTrain using all training data...\n');
+start = tic;
 usr_num = size(R, 1);
 mv_num = size(R, 2);
 U = random('norm', 0, 3, K, usr_num);
@@ -87,4 +99,9 @@ end
 train_cost = cost;        
 val_cost = evalCost(R, I_val, U, V);   
 fprintf('[Validation] cost is %f.\n', val_cost);
+duration = toc(start);
+fprintf('Train using all training data finished, %.2f secs consumed.\n', duration);
+
+duration_all = toc(start_all);
+fprintf('Total %.2f secs consumed.\n', duration_all);
 

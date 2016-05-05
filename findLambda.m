@@ -13,7 +13,7 @@ for iu = 1:4
     for iv = 1:4
         lambda_u = lambda_u_set(iu);
         lambda_v = lambda_v_set(iv);
-        fprintf('[Train] lambda_u = %f, lambda_v = %f...\n', lambda_u, lambda_v);
+%         fprintf('[Train] lambda_u = %f, lambda_v = %f...\n', lambda_u, lambda_v);
         U = random('norm', 0, 3, K, usr_num);
         V = random('norm', 0, 3, K, mv_num);
 
@@ -29,9 +29,10 @@ for iu = 1:4
 %             U = U - step .* dU;
 %             V = V - step .* dV;
             
-            fprintf('After %d iterations, cost becomes %f.\n', ite, cost);
+%             fprintf('After %d iterations, cost becomes %f.\n', ite, cost);
             ite = ite + 1;
         end
+        fprintf('[Train] lambda_u = %f, lambda_v = %f, cost is %f.\n', lambda_u, lambda_v, cost);
         cost_train(iu, iv) = cost;
         
         val_cost = evalCost(R, I_val, U, V);   

@@ -8,7 +8,7 @@ cost_train = zeros(1, 5) + 100;
 cost_val = zeros(1, 5) + 100;
 
 for k = 1:5
-    fprintf('[Train] K = %d...\n', k);
+%     fprintf('[Train] K = %d...\n', k);
     U = random('norm', 0, 3, k, usr_num);
     V = random('norm', 0, 3, k, mv_num);
 
@@ -24,9 +24,10 @@ for k = 1:5
 %             U = U - step .* dU;
 %             V = V - step .* dV;
             
-        fprintf('After %d iterations, cost becomes %f.\n', ite, cost);
+%         fprintf('After %d iterations, cost becomes %f.\n', ite, cost);
         ite = ite + 1;
     end
+    fprintf('[Train] K = %d, cost is %f.\n', k, cost);
     cost_train(k) = cost;
         
     val_cost = evalCost(R, I_val, U, V);   
